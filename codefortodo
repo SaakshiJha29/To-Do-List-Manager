@@ -1,0 +1,162 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+// ANSI color codes
+#define RESET   "\033[0m"
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+#define BLUE    "\033[34m"
+#define CYAN    "\033[36m"
+#define BOLD    "\033[1m"
+
+struct Task {
+    int id;
+    string title;
+    string dueDate;
+    Task* next;
+};
+
+class ToDoList {
+private:
+    Task* head;
+    int taskCount;
+
+public:
+    ToDoList() {
+        head = nullptr;
+        taskCount = 0;
+    }
+
+    void addTask(string title, string dueDate) {
+        Task* newTask = new Task();
+        newTask->id = ++taskCount;
+        newTask->title = title;
+        newTask->dueDate = dueDate;
+        newTask->next = nullptr;
+
+        if (!head) {
+            head = newTask;
+        } else {
+            Task* temp = head;
+            while (temp->next) temp = temp->next;
+            temp->next = newTask;
+        }
+        cout << GREEN << "Task added successfully!\n" << RESET;
+    }
+
+    void viewTasks() {
+        if (!head) {
+            cout << YELLOW << "No tasks found.\n" << RESET;
+            return;
+        }
+        Task* temp = head;
+        cout << CYAN << "\nTo-Do List:\n" << RESET;
+        cout << "---------------------------------\n";
+        while (temp) {
+            cout << BOLD << "ID: " << temp->id << RESET
+                 << " | Task: " << temp->title
+                 << " | Due: " << temp->dueDate << "\n";
+            temp = temp->next;
+        }
+        cout << "---------------------------------\n";
+    }
+
+    void deleteTask(int id) {
+        if (!head) {
+            cout << RED << "No tasks to delete.\n" << RESET;
+            return;
+        }
+        Task* temp = head;
+        Task* prev = nullptr;
+
+        while (temp && temp->id != id) {
+            prev = temp;
+            temp = temp->next;
+        }
+        if (!temp) {
+            cout << RED << "Task ID not found.\n" << RESET;
+            return;
+        }
+        if (!prev) { // deleting head
+            head = head->next;
+        } else {
+            prev->next = temp->next;
+        }
+        delete temp;
+        cout << GREEN << "Task deleted successfully!\n" << RESET;
+    }
+
+    void searchTask(string title) {
+        Task* temp = head;
+        bool found = false;
+        while (temp) {
+            if (temp->title == title) {
+                cout << BLUE << "Found: ID " << temp->id
+                     << " | Task: " << temp->title
+                     << " | Due: " << temp->dueDate << "\n" << RESET;
+                found = true;
+            }
+            temp = temp->next;
+        }
+        if (!found) cout << RED << "Task not found.\n" << RESET;
+    }
+};
+
+void showHeader() {
+    cout << CYAN << BOLD;
+    cout << "\n=====================================\n";
+    cout << "         TO-DO LIST MANAGER          \n";
+    cout << "=====================================\n" << RESET;
+}
+
+int main() {
+    ToDoList todo;
+    int choice;
+
+    do {
+        showHeader();
+        cout << GREEN << "1. Add Task\n" << RESET;
+        cout << YELLOW << "2. View All Tasks\n" << RESET;
+        cout << RED << "3. Delete Task\n" << RESET;
+        cout << BLUE << "4. Search Task\n" << RESET;
+        cout << "5. Exit\n";
+        cout << "Enter choice: ";
+        cin >> choice;
+        cin.ignore();
+
+        if (choice == 1) {
+            string title, dueDate;
+            cout << "Enter task title: ";
+            getline(cin, title);
+            cout << "Enter due date (dd/mm/yyyy): ";
+            getline(cin, dueDate);
+            todo.addTask(title, dueDate);
+
+        } else if (choice == 2) {
+            todo.viewTasks();
+
+        } else if (choice == 3) {
+            int id;
+            cout << "Enter task ID to delete: ";
+            cin >> id;
+            todo.deleteTask(id);
+
+        } else if (choice == 4) {
+            string title;
+            cout << "Enter task title to search: ";
+            cin.ignore();
+            getline(cin, title);
+            todo.searchTask(title);
+
+        } else if (choice == 5) {
+            cout << GREEN << "Exiting To-Do List. Have a productive day!\n" << RESET;
+        } else {
+            cout << RED << "Invalid choice. Try again.\n" << RESET;
+        }
+
+    } while (choice != 5);
+
+    return 0;
+}
