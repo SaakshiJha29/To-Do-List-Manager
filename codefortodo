@@ -1,6 +1,4 @@
-#include <iostream>
-#include <string>
-using namespace std;
+
 
 // ANSI color codes
 #define RESET   "\033[0m"
@@ -11,6 +9,43 @@ using namespace std;
 #define CYAN    "\033[36m"
 #define BOLD    "\033[1m"
 
+
+ #include <iostream>
+#include <string>
+#include <algorithm> // for transform
+#include <limits>    // for numeric_limits
+#ifdef _WIN32
+#include <windows.h>
+#endif
+using namespace std;
+
+
+class Color {
+public:
+    static void setColor(const string& color) {
+#ifdef _WIN32
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (color == "RED") SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_INTENSITY);
+        else if (color == "GREEN") SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        else if (color == "YELLOW") SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        else if (color == "BLUE") SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+        else if (color == "CYAN") SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+        else if (color == "BOLD") SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+        else if (color == "RESET") SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        else SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+#else
+        if (color == "RED") cout << "\033[31m";
+        else if (color == "GREEN") cout << "\033[32m";
+        else if (color == "YELLOW") cout << "\033[33m";
+        else if (color == "BLUE") cout << "\033[34m";
+        else if (color == "CYAN") cout << "\033[36m";
+        else if (color == "BOLD") cout << "\033[1m";
+        else cout << "\033[0m"; // RESET
+#endif
+    }
+};
+
+// Task node
 struct Task {
     int id;
     string title;
@@ -23,10 +58,25 @@ private:
     Task* head;
     int taskCount;
 
+    // helper to lowercase a string
+    string toLower(string s) {
+        transform(s.begin(), s.end(), s.begin(), ::tolower);
+        return s;
+    }
+
 public:
     ToDoList() {
-        head = nullptr;
+        head = NULL;
         taskCount = 0;
+    }
+
+    ~ToDoList() { // Destructor to free memory
+        Task* temp;
+        while (head) {
+            temp = head;
+            head = head->next;
+            delete temp;
+        }
     }
 
     void addTask(string title, string dueDate) {
@@ -34,7 +84,7 @@ public:
         newTask->id = ++taskCount;
         newTask->title = title;
         newTask->dueDate = dueDate;
-        newTask->next = nullptr;
+        newTask->next = NULL;
 
         if (!head) {
             head = newTask;
@@ -43,20 +93,22 @@ public:
             while (temp->next) temp = temp->next;
             temp->next = newTask;
         }
-        cout << GREEN << "Task added successfully!\n" << RESET;
+        Color::setColor("GREEN"); cout << "Task added successfully!\n"; Color::setColor("RESET");
     }
 
     void viewTasks() {
         if (!head) {
-            cout << YELLOW << "No tasks found.\n" << RESET;
+            Color::setColor("YELLOW"); cout << "No tasks found.\n"; Color::setColor("RESET");
             return;
         }
         Task* temp = head;
-        cout << CYAN << "\nTo-Do List:\n" << RESET;
+        Color::setColor("CYAN"); cout << "\nTo-Do List:\n"; Color::setColor("RESET");
         cout << "---------------------------------\n";
         while (temp) {
-            cout << BOLD << "ID: " << temp->id << RESET
-                 << " | Task: " << temp->title
+            Color::setColor("BOLD");
+            cout << "ID: " << temp->id;
+            Color::setColor("RESET");
+            cout << " | Task: " << temp->title
                  << " | Due: " << temp->dueDate << "\n";
             temp = temp->next;
         }
@@ -65,18 +117,18 @@ public:
 
     void deleteTask(int id) {
         if (!head) {
-            cout << RED << "No tasks to delete.\n" << RESET;
+            Color::setColor("RED"); cout << "No tasks to delete.\n"; Color::setColor("RESET");
             return;
         }
         Task* temp = head;
-        Task* prev = nullptr;
+        Task* prev = NULL;
 
         while (temp && temp->id != id) {
             prev = temp;
             temp = temp->next;
         }
         if (!temp) {
-            cout << RED << "Task ID not found.\n" << RESET;
+            Color::setColor("RED"); cout << "Task ID not found.\n"; Color::setColor("RESET");
             return;
         }
         if (!prev) { // deleting head
@@ -85,30 +137,38 @@ public:
             prev->next = temp->next;
         }
         delete temp;
-        cout << GREEN << "Task deleted successfully!\n" << RESET;
+        Color::setColor("GREEN"); cout << "Task deleted successfully!\n"; Color::setColor("RESET");
     }
 
     void searchTask(string title) {
         Task* temp = head;
         bool found = false;
+        string query = toLower(title);
+
         while (temp) {
-            if (temp->title == title) {
-                cout << BLUE << "Found: ID " << temp->id
+            if (toLower(temp->title) == query) {
+                Color::setColor("BLUE");
+                cout << "Found: ID " << temp->id
                      << " | Task: " << temp->title
-                     << " | Due: " << temp->dueDate << "\n" << RESET;
+                     << " | Due: " << temp->dueDate << "\n";
+                Color::setColor("RESET");
                 found = true;
             }
             temp = temp->next;
         }
-        if (!found) cout << RED << "Task not found.\n" << RESET;
+        if (!found) {
+            Color::setColor("RED"); cout << "Task not found.\n"; Color::setColor("RESET");
+        }
     }
 };
 
 void showHeader() {
-    cout << CYAN << BOLD;
+    Color::setColor("CYAN");
+    Color::setColor("BOLD");
     cout << "\n=====================================\n";
     cout << "         TO-DO LIST MANAGER          \n";
-    cout << "=====================================\n" << RESET;
+    cout << "=====================================\n";
+    Color::setColor("RESET");
 }
 
 int main() {
@@ -117,14 +177,14 @@ int main() {
 
     do {
         showHeader();
-        cout << GREEN << "1. Add Task\n" << RESET;
-        cout << YELLOW << "2. View All Tasks\n" << RESET;
-        cout << RED << "3. Delete Task\n" << RESET;
-        cout << BLUE << "4. Search Task\n" << RESET;
+        Color::setColor("GREEN"); cout << "1. Add Task\n"; Color::setColor("RESET");
+        Color::setColor("YELLOW"); cout << "2. View All Tasks\n"; Color::setColor("RESET");
+        Color::setColor("RED"); cout << "3. Delete Task\n"; Color::setColor("RESET");
+        Color::setColor("BLUE"); cout << "4. Search Task\n"; Color::setColor("RESET");
         cout << "5. Exit\n";
         cout << "Enter choice: ";
         cin >> choice;
-        cin.ignore();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // clean buffer
 
         if (choice == 1) {
             string title, dueDate;
@@ -140,20 +200,25 @@ int main() {
         } else if (choice == 3) {
             int id;
             cout << "Enter task ID to delete: ";
-            cin >> id;
-            todo.deleteTask(id);
+            if (!(cin >> id)) { // invalid input check
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                Color::setColor("RED"); cout << "Invalid ID! Please enter a number.\n"; Color::setColor("RESET");
+            } else {
+                todo.deleteTask(id);
+            }
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // clear leftover input
 
         } else if (choice == 4) {
             string title;
             cout << "Enter task title to search: ";
-            cin.ignore();
             getline(cin, title);
             todo.searchTask(title);
 
         } else if (choice == 5) {
-            cout << GREEN << "Exiting To-Do List. Have a productive day!\n" << RESET;
+            Color::setColor("GREEN"); cout << "Exiting To-Do List. Have a productive day!\n"; Color::setColor("RESET");
         } else {
-            cout << RED << "Invalid choice. Try again.\n" << RESET;
+            Color::setColor("RED"); cout << "Invalid choice. Try again.\n"; Color::setColor("RESET");
         }
 
     } while (choice != 5);
